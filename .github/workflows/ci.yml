@@ -1,0 +1,111 @@
+# ==============================================================================
+# Aviation Monitoring & Analytics Platform — GitHub Actions CI Workflow
+# ==============================================================================
+# Alasan Desain CI:
+# 1. Zero SQLite compromise: Backend tests & migrations dijalankan dengan service
+#    kontainer PostgreSQL 16 dan Redis 7 sungguhan di runner Linux GitHub Actions.
+# 2. Parallel Jobs: Backend dan Frontend dieksekusi secara terpisah (paralel) untuk
+#    mempercepat siklus feedback pull-request.
+# 3. Fail-fast Security: Linting ruff dan type-checking dijalankan sebelum test suite.
+
+name: Continuous Integration
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  # ----------------------------------------------------------------------------
+  # Job 1: Backend Quality, Migrations, and Automated Tests
+  # ----------------------------------------------------------------------------
+  backend-ci:
+    name: Backend (Python 3.13 / Postgres 16 / Redis 7)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: aviation_user
+          POSTGRES_PASSWORD: aviation_password
+          POSTGRES_DB: aviation_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      APP_ENV: testing
+      FLIGHT_PROVIDER: mock
+      DATABASE_URL: postgresql+asyncpg://aviation_user:aviation_password@localhost:5432/aviation_test_db
+      REDIS_URL: redis://localhost:6379/0
+      JWT_SECRET: test_jwt_secret_key_at_least_32_characters_long_for_ci
+      AVIATIONSTACK_API_KEY: ci_mock_key
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Run code linter (Ruff)
+        run: |
+          ruff check backend
+
+      - name: Validate database migrations (Alembic)
+        run: |
+          alembic -c backend/alembic.ini upgrade head
+
+      - name: Run test suite with coverage
+        run: |
+          pytest backend/tests -v --cov=backend/app --cov-report=xml
+
+  # ----------------------------------------------------------------------------
+  # Job 2: Frontend Typecheck, Lint, and Production Build
+  # ----------------------------------------------------------------------------
+  frontend-ci:
+    name: Frontend (Next.js 15 / Node.js 22)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Compile and build production bundle
+        working-directory: ./frontend
+        run: npm run build

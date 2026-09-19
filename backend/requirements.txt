@@ -1,0 +1,60 @@
+# ==============================================================================
+# Aviation Monitoring & Analytics Platform — Backend Dependencies
+# ==============================================================================
+# Setiap dependency dipilih secara selektif dengan tujuan arsitektur yang jelas:
+
+# Framework Web & Validasi
+# FastAPI: High-performance asynchronous REST API framework dengan auto-generated OpenAPI docs.
+fastapi>=0.115.0
+# Uvicorn: ASGI web server production-ready untuk menjalankan FastAPI.
+uvicorn[standard]>=0.32.0
+# Pydantic: Validasi skema input/output data berbasis Python type hints.
+pydantic>=2.9.0
+# Pydantic Settings: Manajemen konfigurasi berbasis environment variables yang type-safe dan fail-fast.
+pydantic-settings>=2.6.0
+# Email-validator: Validasi alamat email standar untuk Pydantic EmailStr.
+email-validator>=2.0.0
+
+# Database & ORM
+# SQLAlchemy 2.0: ORM relasional dengan dukungan async query modern dan parameterisasi penuh.
+sqlalchemy>=2.0.36
+# Alembic: Tool migrasi skema database terkelola untuk versioning tabel secara deklaratif.
+alembic>=1.14.0
+# Asyncpg: Driver PostgreSQL asynchronous berkecepatan tinggi untuk SQLAlchemy async engine.
+asyncpg>=0.30.0
+# Psycopg2-binary: Driver sync PostgreSQL untuk kompatibilitas script migrasi Alembic offline.
+psycopg2-binary>=2.9.10
+
+# Caching & Rate Limiting
+# Redis: Client Python async untuk interaksi dengan Redis 7 ephemeral cache.
+redis>=5.2.0
+# Slowapi: Middleware rate limiting berbasis token-bucket untuk proteksi endpoint dari brute-force/abuse.
+slowapi>=0.1.9
+
+# HTTP Client Eksternal
+# HTTPX: Client HTTP asynchronous dengan connection pooling, configurable timeout, dan retry handler.
+httpx>=0.28.0
+
+# Otentikasi & Kriptografi
+# PyJWT: Pembuatan dan verifikasi token JSON Web Token (JWT) yang aman.
+pyjwt>=2.10.0
+# Argon2-cffi: Algoritma password hashing modern pemenang Password Hashing Competition (PHC).
+argon2-cffi>=23.1.0
+# Passlib: Abstraksi utilitas context hashing password.
+passlib[argon2]>=1.7.4
+# Python-multipart: Untuk parsing form data saat login OAuth2 compatibility jika diperlukan.
+python-multipart>=0.0.12
+
+# Testing & QA
+# Pytest: Framework pengujian unit & integrasi modern.
+pytest>=8.3.0
+# Pytest-asyncio: Dukungan test case async/await untuk endpoint FastAPI & async repository.
+pytest-asyncio>=0.24.0
+# Pytest-cov: Pembuatan laporan coverage pengujian kode secara otomatis.
+pytest-cov>=6.0.0
+
+# Linting & Static Type Checking
+# Ruff: Linter & code formatter Python super cepat berbasis Rust.
+ruff>=0.8.0
+# Mypy: Static type checker untuk memvalidasi type annotations.
+mypy>=1.13.0
