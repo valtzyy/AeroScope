@@ -69,6 +69,36 @@ class Settings(BaseSettings):
     # Menentukan domain frontend yang diizinkan memanggil backend dengan kredensial cookie.
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def sanitize_database_url(cls, v: str) -> str:
+        if not isinstance(v, str):
+            return v
+        url = v.strip().strip("'\"")
+        # 1. Pastikan skema asyncpg
+        if url.startswith("postgres://"):
+            url = "postgresql+asyncpg://" + url[len("postgres://"):]
+        elif url.startswith("postgresql://") and not url.startswith("postgresql+asyncpg://"):
+            url = "postgresql+asyncpg://" + url[len("postgresql://"):]
+        # 2. Tangani parameter SSL kompatibel asyncpg (Neon default: sslmode=require&channel_binding=require)
+        if "sslmode=" in url:
+            url = url.replace("sslmode=require", "ssl=require").replace("sslmode=prefer", "ssl=prefer")
+        if "channel_binding=" in url:
+            import re
+            url = re.sub(r"[&?]channel_binding=[^&]+", "", url)
+            url = url.replace("?&", "?").rstrip("?")
+        if "neon.tech" in url and "ssl=" not in url:
+            sep = "&" if "?" in url else "?"
+            url = f"{url}{sep}ssl=require"
+        return url
+
+    @field_validator("REDIS_URL", mode="before")
+    @classmethod
+    def sanitize_redis_url(cls, v: str) -> str:
+        if isinstance(v, str):
+            return v.strip().strip("'\"")
+        return v
+
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def parse_cors_origins(cls, v: str | list[str]) -> list[str]:
